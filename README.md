@@ -36,6 +36,7 @@ The proxy takes 2 optional parameters
 1 - local Ollama generate URL
 2 - model name
 (The default values are the same as seen in the example call) 
+
 `python llmaas_proxy.py http://localhost:11434/api/generate llama3.1`
 
 Note current LLmaaS proxy only implemented and tested with Ollama local LLM service!
