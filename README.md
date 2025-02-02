@@ -1,6 +1,30 @@
 # LLmaaS
 Local LLM as a Service
 
+## Components
++----------------------------+
+|        Web Browser         |
+|  - Renders HTML            |
+|  - Handles message history |
+|  - Displays chat messages  |
++------------+---------------+
+             |
+             v
++----------------------------+
+|    LLmaaS Proxy Server     |
+|  - Enables browser access  |
+|    to local LLM resource   |
++------------+---------------+
+             |
+             v
++----------------------------+
+|     Local LLM Service      |
+|  (e.g., Ollama, Llama.cpp) |
+|  - Processes requests      |
+|  - Generates responses     |
++----------------------------+
+
+
 
 
 ## Flask proxy
