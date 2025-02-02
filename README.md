@@ -26,12 +26,9 @@ Local LLM as a Service
 +----------------------------+
 ```
 
-
-
 ## LLmaaS proxy
 
 ### Start flask proxy
-
 The proxy takes 2 optional parameters
 1 - local Ollama generate URL
 2 - model name
@@ -49,6 +46,11 @@ Note current LLmaaS proxy only implemented and tested with Ollama local LLM serv
 
 ## Demo page
 [LLmaaS demo](https://devquasar.com/llmaas/)
+
+# Call for contributors
+Join me an develop the LLmaaS proxy to make this a generic purpose tool to leverage local LLMs on web.
+I'm looking for help to make the proxy more generic support multiple local LLM services without any change on the HTML side.
+Also looking for ideas how to make the HTML par more modular and easy to use.
 
 [<img src="https://raw.githubusercontent.com/csabakecskemeti/devquasar/main/dq_logo_black-transparent.png" width="200"/>](https://devquasar.com)
 
