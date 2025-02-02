@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat with LLM</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; display: flex; flex-direction: column; align-items: center; }
+        .chat-container { width: 1000px; display: flex; flex-direction: column; gap: 10px; }
+        textarea { width: 100%; height: 150px; }
+        .input-container { display: flex; gap: 10px; align-items: center; }
+        input { flex: 1; padding: 8px; }
+        button { padding: 5px 10px; font-size: 14px; }
+        .debug-container { width: 1000px; margin-top: 20px; }
+        .info-box { background: #f4f4f4; padding: 10px; border-radius: 5px; width: 1000px; margin-bottom: 15px; }
+        .toggle-container { display: flex; align-items: center; gap: 5px; margin-bottom: 10px; }
+        .chat-box-wrapper {
+            border: 2px solid #ccc;
+            padding: 20px;
+            border-radius: 8px;
+            width: 100%;
+            max-width: 1000px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            background-color: #fff;
+            overflow-y: auto;
+            max-height: 400px;
+            margin-bottom: 20px;
+        }
+        .assistant-response {
+            color: #555; /* Dark grey for Assistant text */
+        }
+        .inactive {
+            background-color: #f5f5f5;
+            color: #ccc;
+            cursor: not-allowed;
+        }
+        .status-box {
+            background-color: #f0f8ff;
+            border: 2px solid #8fceff;
+            padding: 10px;
+            border-radius: 5px;
+            width: 1000px;
+            margin-bottom: 20px;
+            text-align: center;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="info-box">
+        <h3>About This Chat</h3>
+        <p>This chat allows you to communicate with a local LLM (Llama 3.1) running on the edge. The website connects to a locally hosted Flask server, which acts as a proxy to route chat requests to the LLM. This means that any website can leverage the capabilities of your local LLM to offer a dynamic chat experience tailored to the website content.</p>
+        <p>Enable the toggle switch to "Chat with the Website" to provide additional context from the website in your first message. The LLM can then respond with knowledge about the content of the website and provide interactive assistance, all while the model runs locally on your edge device.</p>
+        <p><strong>Flask Server Code:</strong> The Flask server acts as a proxy that facilitates communication between this website and your locally running LLM. Here’s the Python code to set up the Flask server:</p>
+        <pre>
+import sys
+from flask import Flask, request, jsonify, Response
+from flask_cors import CORS
+import requests
+
+app = Flask(__name__)
+
+# Enable CORS for all routes
+CORS(app)
+
+# Default values for LLM server URL and model name
+DEFAULT_LLM_SERVER_URL = "http://localhost:11434/api/generate"
+DEFAULT_MODEL_NAME = "llama3.1"
+
+# Get the LLM server URL and model name from command-line arguments, or use defaults
+LLM_SERVER_URL = sys.argv[1] if len(sys.argv) > 1 else DEFAULT_LLM_SERVER_URL
+MODEL_NAME = sys.argv[2] if len(sys.argv) > 2 else DEFAULT_MODEL_NAME
+
+# Define the endpoint that the HTML will call
+@app.route('/api/generate', methods=['POST'])
+def generate():
+    payload = request.json
+
+    # Log the incoming payload
+    print(f"Received request payload: {payload}")
+
+    # Override the model in the payload with the model name from the command-line argument
+    payload["model"] = MODEL_NAME
+
+    # Ensure we're passing the 'stream' flag as True to the LLM server
+    payload["stream"] = True
+
+    # Make a request to the LLM server with the same payload
+    try:
+        response = requests.post(LLM_SERVER_URL, json=payload, stream=True)
+
+        # Check if the response is successful
+        if response.status_code == 200:
+            def generate_stream():
+                for chunk in response.iter_content(chunk_size=1024):
+                    if chunk:
+                        yield chunk.decode('utf-8')
+
+            return Response(generate_stream(), content_type='text/plain; charset=utf-8')
+        else:
+            return jsonify({"error": "LLM server response error"}), response.status_code
+    except Exception as e:
+        print(f"Error: {e}")
+        return jsonify({"error": "Internal server error"}), 500
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5000)  # Running on local machine, port 5000
+        </pre>
+        <p>This code sets up a simple Flask server that receives requests from the website, forwards them to your local LLM server (e.g., Ollama or any other LLM running locally), and streams back the response to the client.</p>
+    </div>
+
+
+<div class="chat-container">
+    <h2>Chat with LLM</h2>
+    <div class="toggle-container">
+        <label for="contextToggle">Chat with the Website:</label>
+        <input type="checkbox" id="contextToggle">
+    </div>
+
+    <div class="status-box" id="statusBox" style="display:none;"></div>
+
+    <div class="chat-box-wrapper">
+        <div id="response" style="white-space: pre-wrap;"></div>
+    </div>
+
+    <div class="input-container">
+        <input type="text" id="prompt" placeholder="Type your message here..." />
+        <button id="sendBtn" onclick="callLLM()">Send</button>
+        <button onclick="clearChatHistory()">New Chat</button>
+    </div>
+</div>
+
+<div class="debug-container">
+    <h3>Debug Log</h3>
+    <textarea id="debugLog" readonly></textarea>
+</div>
+
+<script>
+    function logDebug(message) {
+        const logBox = document.getElementById("debugLog");
+        logBox.value += `[${new Date().toLocaleTimeString()}] ${message}\n`;
+        logBox.scrollTop = logBox.scrollHeight;
+    }
+
+    function getChatHistory() {
+        const history = sessionStorage.getItem("chatHistory");
+        return history ? decodeURIComponent(history) : "";
+    }
+
+    function saveChatHistory(history) {
+        sessionStorage.setItem("chatHistory", encodeURIComponent(history));
+    }
+
+    function updateResponseBox() {
+        document.getElementById("response").innerHTML = getChatHistory();
+    }
+
+    function clearChatHistory() {
+        sessionStorage.removeItem("chatHistory");
+        document.getElementById("response").innerHTML = "";
+        logDebug("Chat history cleared.");
+    }
+
+    async function callLLM() {
+        const promptInput = document.getElementById("prompt");
+        const responseBox = document.getElementById("response");
+        const contextToggle = document.getElementById("contextToggle");
+        const infoBox = document.querySelector(".info-box");  
+        const contextText = infoBox ? infoBox.innerText : "";
+
+        let userMessage = promptInput.value.trim();
+        if (!userMessage) {
+            logDebug("No prompt entered.");
+            return;
+        }
+
+        let chatHistory = getChatHistory();
+
+        // Append website context only if this is the first message and toggle is ON
+        if (!chatHistory && contextToggle.checked && contextText) {
+            userMessage = `<b>User:</b> ${userMessage}<br><br>CONTEXT: ${contextText}`;
+        } else {
+            userMessage = `<b>User:</b> ${userMessage}`;
+        }
+
+        chatHistory += `${userMessage}<br><b>Assistant:</b> `;
+
+        const requestPayload = {
+            model: "llama3.1",
+            prompt: chatHistory,
+            stream: true
+        };
+
+        logDebug(`Sending request: ${JSON.stringify(requestPayload)}`);
+
+        try {
+            const response = await fetch("http://localhost:5000/api/generate", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(requestPayload)
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            let assistantMessage = "";
+
+            promptInput.value = ""; 
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+
+                const chunk = decoder.decode(value, { stream: true }).trim();
+                if (chunk) {
+                    try {
+                        const jsonData = JSON.parse(chunk);
+                        if (jsonData.response) {
+                            if (!jsonData.response.startsWith("CONTEXT:")) {
+                                responseBox.innerHTML += `<span class="assistant-response">${jsonData.response}</span>`;
+                                assistantMessage += jsonData.response;
+                                logDebug(`Received chunk: "${jsonData.response}"`);
+                            }
+                        }
+                        if (jsonData.done) break;
+                    } catch (err) {
+                        logDebug(`Error parsing chunk: ${chunk}`);
+                    }
+                }
+            }
+
+            chatHistory += assistantMessage + "<br>";
+            saveChatHistory(chatHistory);
+            updateResponseBox();
+
+        } catch (error) {
+            logDebug(`Error: ${error.message}`);
+        }
+    }
+
+    async function checkLLMHealth() {
+        try {
+            const response = await fetch("http://localhost:5000/api/generate", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    model: "llama3.1",
+                    prompt: "llm healthcheck - answer with ok",
+                    stream: true
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error(`Health check failed: ${response.status}`);
+            }
+
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+
+            // Check if we receive any data to confirm local LLM capabilities
+            const { done, value } = await reader.read();
+            const chunk = decoder.decode(value, { stream: true }).trim();
+
+            if (chunk) {
+                // First token received, LLM is available
+                document.getElementById("sendBtn").disabled = false; // Enable chat button
+                document.getElementById("sendBtn").classList.remove("inactive");
+                document.getElementById("statusBox").style.display = "block";
+                document.getElementById("statusBox").innerHTML = "Local LLM capabilities detected";
+                document.getElementById("statusBox").style.color = "green";
+            }
+
+        } catch (error) {
+            // If no response or error, disable buttons and show message
+            document.getElementById("sendBtn").disabled = true;
+            document.getElementById("sendBtn").classList.add("inactive");
+            document.getElementById("statusBox").style.display = "block";
+            document.getElementById("statusBox").innerHTML = "No local LLM capabilities";
+            document.getElementById("statusBox").style.color = "red";
+        }
+    }
+
+    window.onload = function() {
+        checkLLMHealth();
+        updateResponseBox();
+    };
+</script>
+
+</body>
+</html>
