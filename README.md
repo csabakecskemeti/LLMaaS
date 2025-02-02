@@ -28,7 +28,7 @@ Local LLM as a Service
 
 
 
-## Flask proxy
+## LLmaaS proxy
 
 ### Start flask proxy
 
