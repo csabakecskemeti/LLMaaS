@@ -48,6 +48,7 @@ Note current LLmaaS proxy only implemented and tested with Ollama local LLM serv
 [LLmaaS demo](https://devquasar.com/llmaas/)
 
 ![til](https://raw.githubusercontent.com/csabakecskemeti/LLmaaS/main/llmaas_demo.gif)
+[youtube link to recorded demo](https://youtu.be/OOWGr8jcP5Q?si=ZjEjqksjcj7c97S1)
 
 # Call for contributors
 Join me an develop the LLmaaS proxy to make this a generic purpose tool to leverage local LLMs on web.
