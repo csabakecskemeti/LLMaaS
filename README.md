@@ -2,6 +2,7 @@
 Local LLM as a Service
 
 ## Components
+```
 +----------------------------+
 |        Web Browser         |
 |  - Renders HTML            |
@@ -23,7 +24,7 @@ Local LLM as a Service
 |  - Processes requests      |
 |  - Generates responses     |
 +----------------------------+
-
+```
 
 
 
