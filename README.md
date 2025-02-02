@@ -1,4 +1,4 @@
-# LLaaS
+# LLmaaS
 Local LLM as a Service
 
 
