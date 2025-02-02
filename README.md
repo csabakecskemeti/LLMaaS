@@ -45,7 +45,7 @@ Note current LLmaaS proxy only implemented and tested with Ollama local LLM serv
 - Install Ollama local LLM service
   - Start serving a local model with Ollama (demo has used Llama 3.1)
 - Download and start LLmaaS proxy as seen above
-- Load [demo page](https://devquasar.com/llmaas/)
+- Load [demo page](https://devquasar.com/llmaas/) or use the provided html file locally
 
 ## Demo page
 [LLmaaS demo](https://devquasar.com/llmaas/)
