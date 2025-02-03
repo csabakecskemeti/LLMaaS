@@ -53,6 +53,7 @@ Note current LLmaaS proxy only implemented and tested with Ollama local LLM serv
 
 # Call for contributors
 Join me an develop the LLmaaS proxy to make this a generic purpose tool to leverage local LLMs on web.
+Introduce security to avoid resource exploitation. Move to FastAPI?
 I'm looking for help to make the proxy more generic support multiple local LLM services without any change on the HTML side.
 Also looking for ideas how to make the HTML par more modular and easy to use.
 
